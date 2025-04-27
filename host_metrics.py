@@ -20,3 +20,9 @@ def get_ip_address():
         except:
             return "127.0.0.1"  # Return localhost if all else fails
 
+## Check if Docker is running
+def is_docker_running():
+    return subprocess.call(
+        ["systemctl", "is-active", "--quiet", "docker"]
+    ) == 0
+
