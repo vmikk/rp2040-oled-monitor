@@ -1,4 +1,5 @@
 import json, subprocess, os, time, serial
+import requests
 
 
 ## Get the primary IP address (on the local network)
@@ -25,4 +26,19 @@ def is_docker_running():
     return subprocess.call(
         ["systemctl", "is-active", "--quiet", "docker"]
     ) == 0
+
+## Check if Eutax server is healthy
+def is_eutax_healthy():
+    try:
+        ## Make a GET request to the health endpoint
+        response = requests.get("http://localhost:8000/api/v1/health", timeout=5)
+        
+        ## Check if response is successful and has the right status
+        if response.status_code == 200:
+            data = response.json()
+            if data.get("status") == "healthy":
+                return True
+        return False
+    except Exception as e:
+        return False
 
