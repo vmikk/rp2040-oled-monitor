@@ -8,6 +8,8 @@ import adafruit_displayio_ssd1306
 from i2cdisplaybus import I2CDisplayBus
 import digitalio  # For GPIO control
 import neopixel   # For the onboard WS2812 LED
+import usb_cdc    # For receiving data from host
+import json       # For parsing metrics
 
 # Turn off the WS2812 LED on GP16
 try:
@@ -53,10 +55,14 @@ icon_docker = bytearray((
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ))
 
-# Sample data (will be updated with real data)
+# Default data (will be updated with real data)
 IP = "192.168.252.252"
 UPTIME = "008.1d"
 JOBCOUNT = "3280"
+
+# Dcker and eutax status
+DOCKER_RUNNING = False
+EUTAX_HEALTHY = False
 
 # Create bitmap for the Docker icon
 def create_icon_bitmap(icon_data, width, height):
@@ -102,10 +108,12 @@ def setup_layout():
     # Clear the display first
     clear_display()
     
-    # Docker icon on left, aligned with bottom of display
-    docker_tile_copy = displayio.TileGrid(docker_bitmap, pixel_shader=palette)
-    docker_tile_copy.x = 5
-    docker_tile_copy.y = HEIGHT - ICON_HEIGHT  # Align with bottom of display
+    # Only show Docker icon if Docker is running AND Eutax is healthy
+    if DOCKER_RUNNING and EUTAX_HEALTHY:
+        docker_tile_copy = displayio.TileGrid(docker_bitmap, pixel_shader=palette)
+        docker_tile_copy.x = 5
+        docker_tile_copy.y = HEIGHT - ICON_HEIGHT  # Align with bottom of display
+        main_group.append(docker_tile_copy)
     
     # IP address aligned to left side
     ip_label = label.Label(font, text=IP, color=0xFFFFFF, x=5, y=15)
@@ -117,7 +125,6 @@ def setup_layout():
     uptime_label = label.Label(font, text=UPTIME, color=0xFFFFFF, x=90, y=58)
     
     # Add all elements to main group
-    main_group.append(docker_tile_copy)
     main_group.append(ip_label)
     main_group.append(job_label)
     main_group.append(uptime_label)
@@ -130,15 +137,61 @@ def update_display():
 update_display()
 
 # Function to update display data
-def update_data(ip=None, uptime=None, jobcount=None):
-    global IP, UPTIME, JOBCOUNT
+def update_data(ip=None, uptime=None, jobcount=None, docker_running=None, eutax_healthy=None):
+    global IP, UPTIME, JOBCOUNT, DOCKER_RUNNING, EUTAX_HEALTHY
     
     if ip is not None:
         IP = ip
     if uptime is not None:
         UPTIME = uptime
     if jobcount is not None:
-        JOBCOUNT = jobcount
+        JOBCOUNT = str(jobcount)
+    if docker_running is not None:
+        DOCKER_RUNNING = docker_running
+    if eutax_healthy is not None:
+        EUTAX_HEALTHY = eutax_healthy
         
     update_display()
+
+# --- Prepare serial ----------------------
+# usb_cdc.console is REPL; usb_cdc.data is the data channel
+data_port = usb_cdc.data
+buffer = b""
+
+# Main loop to receive and process data
+def main():
+    global buffer
+    
+    while True:
+        # read any available bytes
+        chunk = data_port.read(32)
+        if chunk:
+            buffer += chunk
+            if b"\n" in buffer:
+                line, _, buffer = buffer.partition(b"\n")
+                try:
+                    m = json.loads(line.decode("utf-8"))
+                    
+                    # Format uptime nicely
+                    uptime_str = m.get('uptime', '')
+                    if uptime_str.startswith('up '):
+                        uptime_str = uptime_str[3:]  # Remove the 'up ' prefix
+                    
+                    # Update display with received metrics
+                    update_data(
+                        ip=m.get('ip', IP),
+                        uptime=uptime_str,
+                        jobcount=m.get('requests', 0),
+                        docker_running=m.get('docker', False),
+                        eutax_healthy=m.get('eutax', False)
+                    )
+                    
+                except Exception as e:
+                    print(f"Error parsing metrics: {e}")
+        
+        time.sleep(1)
+
+# Initialize display and start the main loop
+if __name__ == "__main__":
+    main()
 
