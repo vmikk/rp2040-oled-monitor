@@ -11,13 +11,20 @@ import neopixel   # For the onboard WS2812 LED
 import usb_cdc    # For receiving data from host
 import json       # For parsing metrics
 
-# Turn off the WS2812 LED on GP16
+# Global variables for status
+IP = "192.168.252.252"
+UPTIME = "008.1d"
+JOBCOUNT = "3280"
+DOCKER_RUNNING = False
+EUTAX_HEALTHY = False
+
+# Initialize the WS2812 LED on GP16
 try:
     pixel = neopixel.NeoPixel(board.GP16, 1, brightness=0.1)
-    pixel[0] = (0, 0, 0)
+    pixel[0] = (0, 0, 0)  # Initially off
 except Exception as e:
     # If LED control fails, don't let it prevent the main code from running
-    print(f"LED control skipped: {e}")
+    print(f"LED control failed: {e}")
 
 # --- Display Setup ---
 displayio.release_displays()
@@ -38,6 +45,18 @@ display = adafruit_displayio_ssd1306.SSD1306(display_bus, width=WIDTH, height=HE
 main_group = displayio.Group()
 display.root_group = main_group
 
+# Clear display
+display.fill(0)
+display.show()
+
+# Function to update LED based on health status
+def update_health_status():
+    # Turn on red LED if both Docker is not running and Eutax is not healthy
+    if not DOCKER_RUNNING and not EUTAX_HEALTHY:
+        pixel[0] = (255, 0, 0)  # Red
+    else:
+        pixel[0] = (0, 0, 0)  # Off
+
 ## Docker icon 40x40
 icon_docker = bytearray((
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -54,15 +73,6 @@ icon_docker = bytearray((
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 ))
-
-# Default data (will be updated with real data)
-IP = "192.168.252.252"
-UPTIME = "008.1d"
-JOBCOUNT = "3280"
-
-# Dcker and eutax status
-DOCKER_RUNNING = False
-EUTAX_HEALTHY = False
 
 # Create bitmap for the Docker icon
 def create_icon_bitmap(icon_data, width, height):
@@ -132,6 +142,7 @@ def setup_layout():
 def update_display():
     setup_layout()
     display.refresh()
+    update_health_status()  # Update LED status
 
 # Initialize the display
 update_display()
