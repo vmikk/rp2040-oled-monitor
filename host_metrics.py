@@ -58,3 +58,13 @@ def eutax_job_count():
     except Exception as e:
         return 0
 
+## Gather metrics
+def gather():
+    return {
+        "ip":         get_ip_address(),
+        "docker":     is_docker_running(),
+        "uptime":     uptime_days(),
+        "eutax":      is_eutax_healthy(),
+        "eutax_jobs": eutax_job_count()
+    }
+
