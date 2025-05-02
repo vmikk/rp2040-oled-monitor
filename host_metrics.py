@@ -1,5 +1,6 @@
 import json, subprocess, os, time, serial
 import requests
+import cbor2
 
 
 ## Get the primary IP address (on the local network)
@@ -67,4 +68,18 @@ def gather():
         "eutax":      is_eutax_healthy(),
         "eutax_jobs": eutax_job_count()
     }
+
+def send_cbor(m):
+    """
+    Serialize metrics using CBOR (Concise Binary Object Representation) and send over serial.
+    CBOR advantages:
+    - Compact binary format (smaller payload than JSON)
+    - Efficient encoding/decoding for resource-constrained devices
+    - Self-describing format that preserves data types
+    - Specifically designed for IoT and machine-to-machine communication
+    """
+    with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as ser:
+        # Convert Python dictionary to CBOR binary data
+        cbor_data = cbor2.dumps(m)
+        ser.write(cbor_data)
 
