@@ -42,3 +42,9 @@ def is_eutax_healthy():
     except Exception as e:
         return False
 
+## Get the uptime in days (1 decimal place)
+def uptime_days():
+    with open('/proc/uptime', 'r') as f:
+        uptime_seconds = float(f.read().split()[0])
+    return round(uptime_seconds / 86400, 1)
+
