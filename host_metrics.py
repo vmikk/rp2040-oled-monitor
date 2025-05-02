@@ -48,3 +48,13 @@ def uptime_days():
         uptime_seconds = float(f.read().split()[0])
     return round(uptime_seconds / 86400, 1)
 
+## Get the number of Eutax jobs
+def eutax_job_count():
+    try:
+        response = requests.get("http://localhost:8000/api/v1/job_count", timeout=5)
+        if response.status_code == 200:
+            return int(response.text)
+        return 0
+    except Exception as e:
+        return 0
+
