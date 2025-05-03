@@ -1,6 +1,6 @@
 import json, subprocess, os, time, serial
 import requests
-import cbor2
+# import cbor2  # CBOR serialization library - not supported in CircuitPython yet
 
 
 ## Get the primary IP address (on the local network)
@@ -69,17 +69,36 @@ def gather():
         "eutax_jobs": eutax_job_count()
     }
 
-def send_cbor(m):
+## Send metrics to the serial port
+def send(m):
     """
-    Serialize metrics using CBOR (Concise Binary Object Representation) and send over serial.
-    CBOR advantages:
-    - Compact binary format (smaller payload than JSON)
-    - Efficient encoding/decoding for resource-constrained devices
-    - Self-describing format that preserves data types
-    - Specifically designed for IoT and machine-to-machine communication
+    Serialize metrics using a simple pipe-delimited format
+    E.g., "key1:value1|key2:value2|key3:value3"
+    Boolean values are represented as 'true'/'false' strings
     """
     with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as ser:
-        # Convert Python dictionary to CBOR binary data
-        cbor_data = cbor2.dumps(m)
-        ser.write(cbor_data)
+        # Create pipe-delimited string of key:value pairs
+        parts = []
+        for key, value in m.items():
+            # Convert boolean values to true/false strings
+            if isinstance(value, bool):
+                value = "true" if value else "false"
+            parts.append(f"{key}:{value}")
+        
+        data = "|".join(parts) + "\n"    # Add newline as message terminator
+        ser.write(data.encode("ascii"))
+
+# def send_cbor(m):
+#     """
+#     Serialize metrics using CBOR (Concise Binary Object Representation) and send over serial.
+#     CBOR advantages:
+#     - Compact binary format (smaller payload than JSON)
+#     - Efficient encoding/decoding for resource-constrained devices
+#     - Self-describing format that preserves data types
+#     - Specifically designed for IoT and machine-to-machine communication
+#     """
+#     with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as ser:
+#         # Convert Python dictionary to CBOR binary data
+#         cbor_data = cbor2.dumps(m)
+#         ser.write(cbor_data)
 
