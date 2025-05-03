@@ -9,7 +9,6 @@ from i2cdisplaybus import I2CDisplayBus
 import digitalio  # For GPIO control
 import neopixel   # For the onboard WS2812 LED
 import usb_cdc    # For receiving data from host
-import json       # For parsing metrics
 
 # Global variables for status
 IP = "192.168.252.252"
@@ -163,6 +162,29 @@ def update_data(ip=None, uptime=None, jobcount=None, docker_running=None, eutax_
         EUTAX_HEALTHY = eutax_healthy
         
     update_display()
+
+## Function to parse pipe-delimited messages from host
+def parse_message(data):
+    """
+    Parse a pipe-delimited message in format "key1:value1|key2:value2|key3:value3"
+    """
+    result = {}
+    pairs = data.strip().split("|")
+    for pair in pairs:
+        if ":" in pair:
+            key, value = pair.split(":", 1)
+            # Handle boolean values as strings
+            if value == "true":
+                value = True
+            elif value == "false":
+                value = False
+            # Convert numeric strings to appropriate types
+            elif value.isdigit():
+                value = int(value)
+            elif value.replace('.', '', 1).isdigit():
+                value = float(value)
+            result[key] = value
+    return result
 
 # --- Prepare serial ----------------------
 # usb_cdc.console is REPL; usb_cdc.data is the data channel
