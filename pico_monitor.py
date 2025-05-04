@@ -11,9 +11,9 @@ import neopixel   # For the onboard WS2812 LED
 import usb_cdc    # For receiving data from host
 
 # Global variables for status
-IP = "192.168.252.252"
-UPTIME = "008.1d"
-JOBCOUNT = "3280"
+IP = "000.000.000.000"
+UPTIME = "000.0d"
+JOBCOUNT = "0000"
 DOCKER_RUNNING = False
 EUTAX_HEALTHY = False
 
