@@ -206,8 +206,8 @@ def main():
                     # Parse the pipe-delimited message
                     m = parse_message(line.decode("ascii"))
                     
-                    # Format uptime, add suffix "d"
-                    uptime_str = f"{m.get('uptime', 0.0):.1f}d"
+                    # Format uptime, add suffix "d" and 2 leading zeros
+                    uptime_str = f"{m.get('uptime', 0.0):06.1f}d"
                     
                     # Update display with received metrics
                     update_data(
