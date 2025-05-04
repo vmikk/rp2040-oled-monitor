@@ -45,8 +45,8 @@ main_group = displayio.Group()
 display.root_group = main_group
 
 # Clear display
-display.fill(0)
-display.show()
+while len(main_group) > 0:
+    main_group.pop()
 
 # Function to update LED based on health status
 def update_health_status():
