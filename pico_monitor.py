@@ -203,18 +203,17 @@ def main():
             if b"\n" in buffer:
                 line, _, buffer = buffer.partition(b"\n")
                 try:
-                    m = json.loads(line.decode("utf-8"))
+                    # Parse the pipe-delimited message
+                    m = parse_message(line.decode("ascii"))
                     
-                    # Format uptime nicely
-                    uptime_str = m.get('uptime', '')
-                    if uptime_str.startswith('up '):
-                        uptime_str = uptime_str[3:]  # Remove the 'up ' prefix
+                    # Format uptime, add suffix "d"
+                    uptime_str = f"{m.get('uptime', 0.0):.1f}d"
                     
                     # Update display with received metrics
                     update_data(
                         ip=m.get('ip', IP),
                         uptime=uptime_str,
-                        jobcount=m.get('requests', 0),
+                        jobcount=m.get('eutax_jobs', 0),
                         docker_running=m.get('docker', False),
                         eutax_healthy=m.get('eutax', False)
                     )
