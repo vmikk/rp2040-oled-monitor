@@ -102,3 +102,13 @@ def send(m):
 #         cbor_data = cbor2.dumps(m)
 #         ser.write(cbor_data)
 
+## Main loop
+def main():
+    with serial.Serial(SERIAL_PORT, BAUDRATE, timeout=1) as ser:
+        while True:
+            m = gather()
+            send(m)
+            time.sleep(60)   # send once a minute (match your cron)
+
+if __name__ == "__main__":
+    main()
