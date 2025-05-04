@@ -221,7 +221,7 @@ def main():
                 except Exception as e:
                     print(f"Error parsing metrics: {e}")
         
-        time.sleep(1)
+        time.sleep(25)
 
 # Initialize display and start the main loop
 if __name__ == "__main__":
